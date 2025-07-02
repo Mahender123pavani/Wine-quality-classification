@@ -3,7 +3,7 @@ import numpy as np
 import joblib
 
 # Load the trained model and scaler
-model = joblib.load('wine_model.pkl')      # You must have saved this earlier
+model = joblib.load('final_model.pkl')      # You must have saved this earlier
 scaler = joblib.load('scaler.pkl')         # You must have saved your scaler too
 
 # Streamlit app layout

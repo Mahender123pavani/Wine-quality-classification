@@ -32,6 +32,6 @@ input_data = np.array([[fixed_acidity, volatile_acidity, citric_acid,
 
 # Predict button
 if st.button("Predict Wine Quality"):
-    prediction = model.predict(scaled_data)[0]
+    prediction = model.predict(input_data)[0]
     result = "🍷 Good Quality Wine (1)" if prediction == 1 else "⚠ Bad Quality Wine (0)"
     st.success(f"Prediction: {result}")

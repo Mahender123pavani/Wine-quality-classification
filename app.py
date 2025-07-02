@@ -1,37 +1,69 @@
 import streamlit as st
-import numpy as np
-import joblib
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
-# Load the trained model and scaler
-model = joblib.load('final_model.pkl')      # You must have saved this earlier
-         
+from sklearn.pipeline import make_pipeline
 
-# Streamlit app layout
-st.title("🍷 Wine Quality Prediction App")
-st.write("Enter the wine features below to predict whether the wine is *Good (1)* or *Bad (0)*.")
+st.title("🍷 Wine Quality Predictor")
+st.markdown("Upload a CSV or enter wine properties to predict quality.")
 
-# Input fields
-fixed_acidity = st.slider("Fixed Acidity", 4.0, 16.0, 8.0)
-volatile_acidity = st.slider("Volatile Acidity", 0.1, 1.5, 0.5)
-citric_acid = st.slider("Citric Acid", 0.0, 1.0, 0.3)
-residual_sugar = st.slider("Residual Sugar", 0.5, 15.0, 2.5)
-chlorides = st.slider("Chlorides", 0.01, 0.2, 0.05)
-free_sulfur_dioxide = st.slider("Free Sulfur Dioxide", 1, 70, 15)
-total_sulfur_dioxide = st.slider("Total Sulfur Dioxide", 6, 200, 50)
-density = st.slider("Density", 0.9900, 1.0050, 0.9950)
-pH = st.slider("pH", 2.8, 4.0, 3.2)
-sulphates = st.slider("Sulphates", 0.2, 1.5, 0.6)
-alcohol = st.slider("Alcohol", 8.0, 14.9, 10.0)
+# --- Load and Train Model ---
+@st.cache_resource
+def train_model():
+    # Load the dataset (must be uploaded or bundled)
+    data = pd.read_csv("WineQT.csv")
 
-# Combine inputs into array
-input_data = np.array([[fixed_acidity, volatile_acidity, citric_acid,
-                        residual_sugar, chlorides, free_sulfur_dioxide,
-                        total_sulfur_dioxide, density, pH, sulphates, alcohol]])
+    if "quality" not in data.columns:
+        st.error("❌ Dataset must have a 'quality' column.")
+        st.stop()
+
+    X = data.drop("quality", axis=1)
+    y = data["quality"]
+
+    # Train model pipeline
+    pipeline = make_pipeline( RandomForestClassifier(random_state=42))
+    pipeline.fit(X, y)
+    return pipeline, X.columns.tolist()
+
+model, feature_names = train_model()
+
+# --- Manual Input Section ---
+st.subheader("🔢 Enter Wine Features")
+
+user_input = {}
+for feature in feature_names:
+    user_input[feature] = st.number_input(f"{feature}", value=0.0)
+
+if st.button("🔍 Predict Quality"):
+    input_df = pd.DataFrame([user_input])
+    prediction = model.predict(input_df)[0]
+    st.success(f"🎯 Predicted Wine Quality: **{prediction}**")
+
+# --- Bulk CSV Upload Section ---
+st.subheader("📁 Bulk Prediction")
+pred_file = st.file_uploader("Upload a CSV file for prediction", type=["csv"], key="predict")
+
+if pred_file:
+    try:
+        pred_df = pd.read_csv(pred_file)
+
+        # Remove target column if accidentally included
+        if "quality" in pred_df.columns:
+            pred_df = pred_df.drop("quality", axis=1)
+
+        missing = set(feature_names) - set(pred_df.columns)
+        if missing:
+            st.error(f"❌ Missing columns: {', '.join(missing)}")
+        else:
+            pred_df["predicted_quality"] = model.predict(pred_df)
+            st.write(pred_df.head())
+
+            csv = pred_df.to_csv(index=False)
+            st.download_button("📥 Download Predictions", csv, "predicted_wine_quality.csv", mime="text/csv")
+    except Exception as e:
+        st.error(f"⚠️ Failed to read prediction CSV: {e}")
 
 
-
-# Predict button
-if st.button("Predict Wine Quality"):
-    prediction = model.predict(input_data)[0]
-    result = "🍷 Good Quality Wine (1)" if prediction == 1 else "⚠ Bad Quality Wine (0)"
-    st.success(f"Prediction: {result}")
+st.markdown("---")
+st.markdown("Built with ❤️ using Streamlit and scikit-learn")

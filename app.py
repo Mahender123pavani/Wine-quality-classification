@@ -28,8 +28,7 @@ input_data = np.array([[fixed_acidity, volatile_acidity, citric_acid,
                         residual_sugar, chlorides, free_sulfur_dioxide,
                         total_sulfur_dioxide, density, pH, sulphates, alcohol]])
 
-# Scale the input data
-scaled_data = scaler.transform(input_data)
+
 
 # Predict button
 if st.button("Predict Wine Quality"):

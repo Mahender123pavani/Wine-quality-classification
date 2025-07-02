@@ -4,7 +4,7 @@ import joblib
 
 # Load the trained model and scaler
 model = joblib.load('final_model.pkl')      # You must have saved this earlier
-scaler = joblib.load('scaler.pkl')         # You must have saved your scaler too
+         
 
 # Streamlit app layout
 st.title("🍷 Wine Quality Prediction App")

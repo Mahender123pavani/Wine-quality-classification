@@ -13,21 +13,21 @@ st.markdown("Upload a CSV or enter wine properties to predict quality.")
 def train_model():
     data = pd.read_csv("WineQT.csv")
 
-    # Drop 'id' column if it exists
-    if "id" in data.columns:
-        data = data.drop("id", axis=1)
+    # Remove 'id' column completely
+    if 'id' in data.columns:
+        data.drop('id', axis=1, inplace=True)
 
-    if "quality" not in data.columns:
+    if 'quality' not in data.columns:
         st.error("❌ Dataset must have a 'quality' column.")
         st.stop()
 
     X = data.drop("quality", axis=1)
     y = data["quality"]
 
-    # Train model pipeline
-    pipeline = make_pipeline(RandomForestClassifier(random_state=42))
-    pipeline.fit(X, y)
-    return pipeline, X.columns.tolist()
+    model = make_pipeline(RandomForestClassifier(random_state=42))
+    model.fit(X, y)
+
+    return model, X.columns.tolist()
 
 model, feature_names = train_model()
 
@@ -45,15 +45,16 @@ if st.button("🔍 Predict Quality"):
 
 # --- Bulk CSV Upload Section ---
 st.subheader("📁 Bulk Prediction")
-pred_file = st.file_uploader("Upload a CSV file for prediction", type=["csv"], key="predict")
+pred_file = st.file_uploader("Upload a CSV file for prediction", type=["csv"])
 
 if pred_file:
     try:
         pred_df = pd.read_csv(pred_file)
 
-        # Drop 'quality' and 'id' columns if present
-        pred_df = pred_df.drop(columns=[col for col in ["quality", "id"] if col in pred_df.columns])
+        # Remove 'id' and 'quality' columns if present
+        pred_df.drop(columns=[col for col in ['id', 'quality'] if col in pred_df.columns], inplace=True)
 
+        # Validate input features
         missing = set(feature_names) - set(pred_df.columns)
         if missing:
             st.error(f"❌ Missing columns: {', '.join(missing)}")
@@ -66,7 +67,7 @@ if pred_file:
             csv = pred_df.to_csv(index=False)
             st.download_button("📥 Download Predictions", csv, "predicted_wine_quality.csv", mime="text/csv")
     except Exception as e:
-        st.error(f"⚠️ Failed to read prediction CSV: {e}")
+        st.error(f"⚠️ Failed to process file: {e}")
 
 st.markdown("---")
 st.markdown("Built with ❤️ using Streamlit and scikit-learn")
